@@ -117,6 +117,66 @@ tracer_log_end_impl(struct tracer_instance *instance)
 	fflush(tracer->outfp);
 }
 
+void
+tracer_instance_add_obj_interface(struct tracer_instance *instance, uint32_t id,
+	void* interface)
+{
+	struct wl_array *interfaces;
+
+	if (id >= WL_SERVER_ID_START) {
+		id -= WL_SERVER_ID_START;
+		interfaces = &instance->server_obj_interfaces;
+	} else {
+		interfaces = &instance->client_obj_interfaces;
+	}
+
+	if (id * sizeof(void*) >= interfaces->size) {
+		uint32_t needed = id * sizeof(void*) - interfaces->size + sizeof(void*);
+		wl_array_add(interfaces, needed);
+
+		// Zero the newly allocated elements, in case we are allocating for
+		// a new ID after a gap of some missing elements
+		memset((char *)interfaces->data + interfaces->size - needed, 0, needed);
+	}
+	((void **)interfaces->data)[id] = interface;
+}
+
+void*
+tracer_instance_get_obj_interface(struct tracer_instance *instance, uint32_t id)
+{
+	struct wl_array *interfaces;
+
+	if (id >= WL_SERVER_ID_START) {
+		id -= WL_SERVER_ID_START;
+		interfaces = &instance->server_obj_interfaces;
+	} else {
+		interfaces = &instance->client_obj_interfaces;
+	}
+	if (id * sizeof(void*) >= interfaces->size) {
+		return NULL;
+	}
+	return ((void **)interfaces->data)[id];
+}
+
+void
+tracer_instance_del_obj_interface(struct tracer_instance *instance, uint32_t id)
+{
+	struct wl_array *interfaces;
+
+	if (id >= WL_SERVER_ID_START) {
+		id -= WL_SERVER_ID_START;
+		interfaces = &instance->server_obj_interfaces;
+	} else {
+		interfaces = &instance->client_obj_interfaces;
+	}
+
+	if (id * sizeof(void*) >= interfaces->size) {
+		return;
+	}
+
+	((void **)interfaces->data)[id] = NULL;
+}
+
 /* The following two functions are taken from wayland-client.c*/
 static int
 tracer_connect_to_socket(const char *name)
@@ -274,12 +334,11 @@ tracer_instance_create(struct tracer *tracer, int clientfd)
 	instance->server_conn->instance = instance;
 	instance->client_conn->instance = instance;
 
-	wl_map_init(&instance->map, WL_MAP_CLIENT_SIDE);
+	wl_array_init(&instance->client_obj_interfaces);
+	wl_array_init(&instance->server_obj_interfaces);
 
 	if (analyzer != NULL) {
-		wl_map_insert_new(&instance->map, 0, NULL);
-		wl_map_insert_new(&instance->map, 0,
-				  analyzer->display_interface);
+		tracer_instance_add_obj_interface(instance, 1, analyzer->display_interface);
 	}
 
 	tracer_epoll_add_fd(tracer, serverfd, instance->server_conn);
@@ -311,6 +370,9 @@ tracer_instance_destroy(struct tracer_instance *instance)
 	tracer_connection_destroy(instance->client_conn);
 
 	wl_list_remove(&instance->link);
+
+	wl_array_release(&instance->client_obj_interfaces);
+	wl_array_release(&instance->server_obj_interfaces);
 
 	free(instance);
 }

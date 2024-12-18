@@ -65,8 +65,13 @@ struct tracer_instance {
 	struct tracer_connection *server_conn;
 	struct tracer *tracer;
 	struct wl_list link;
-	struct wl_map map;
+	struct wl_array client_obj_interfaces;
+	struct wl_array server_obj_interfaces;
 };
+
+void tracer_instance_add_obj_interface(struct tracer_instance *instance, uint32_t id, void* interface);
+void* tracer_instance_get_obj_interface(struct tracer_instance *instance, uint32_t id);
+void tracer_instance_del_obj_interface(struct tracer_instance *instance, uint32_t id);
 
 struct tracer_socket;
 

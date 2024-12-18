@@ -64,7 +64,6 @@ analyze_init(struct tracer *tracer)
 static int
 analyze_protocol(struct tracer_connection *connection,
 		 uint32_t size,
-		 struct wl_map *objects,
 		 struct tracer_interface *target,
 		 uint32_t id,
 		 struct tracer_message *message)
@@ -127,8 +126,7 @@ analyze_protocol(struct tracer_connection *connection,
 		case 'n':
 			new_id = *p++;
 			if (new_id != 0) {
-				wl_map_reserve_new(objects, new_id);
-				wl_map_insert_at(objects, 0, new_id, message->types[0]);
+				tracer_instance_add_obj_interface(instance, new_id, message->types[0]);
 			}
 			tracer_log_cont("new_id %u", new_id);
 			break;
@@ -157,11 +155,10 @@ analyze_protocol(struct tracer_connection *connection,
 
 			new_id = *p++;
 			if (new_id != 0) {
-				wl_map_reserve_new(objects, new_id);
 				ptype = tracer_analyzer_lookup_type(analyzer,
 								    type_name);
 				type = ptype == NULL ? NULL : *ptype;
-				wl_map_insert_at(objects, 0, new_id, type);
+				tracer_instance_add_obj_interface(instance, new_id, type);
 			}
 			tracer_log_cont("new_id %u[%s,%u]",
 					new_id, type_name, name);
@@ -196,7 +193,7 @@ analyze_handle_data(struct tracer_connection *connection, int len)
 	if (len < size)
 		return 0;
 
-	interface = wl_map_lookup(&instance->map, id);
+	interface = tracer_instance_get_obj_interface(instance, id);
 
 	if (interface != NULL) {
 		if (connection->side == TRACER_SERVER_SIDE)
@@ -210,11 +207,11 @@ analyze_handle_data(struct tracer_connection *connection, int len)
 		tracer_log_end();
 	}
 
-	analyze_protocol(connection, size, &instance->map,
-				interface, id, message);
+	analyze_protocol(connection, size, interface, id, message);
 
-	if (interface != NULL && !strcmp(message->name, "destroy"))
-		wl_map_remove(&instance->map, id);
+	if (interface != NULL && !strcmp(message->name, "destroy")) {
+		tracer_instance_del_obj_interface(instance, id);
+	}
 
 	return size;
 }
