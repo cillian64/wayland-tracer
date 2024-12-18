@@ -372,7 +372,7 @@ generate_signature(struct tracer_message *message)
 	struct tracer_arg *arg;
 
 	length = wl_list_length(&message->arg_list);
-	signature = malloc(length);
+	signature = malloc(length + 1);
 	if (signature == NULL) {
 		errno = ENOMEM;
 		return -1;
@@ -399,6 +399,8 @@ generate_signature(struct tracer_message *message)
 		i++;
 	}
 	signature[length] = '\0';
+
+	return 0;
 }
 
 int
