@@ -34,7 +34,10 @@ readable format, you can use -d parameter to specifiy XML protocol files
     $ wayland-tracer -d wayland.xml [-d more-protocols] \
     >     -- PROGRAM [ARGS ...]
 
-wayland-tracer will interpret the protocol according to xml definition.
+wayland-tracer will interpret the protocol according to xml definition.  You
+can generally find protocols in /usr/share/wayland-protocols and
+/usr/share/wayland.  If not all protocol definitions are supplied then trace
+output may be incorrect and the traced application might not work correctly.
 
 For more uses (such as server-mode, output redirecting, etc.), see the
 output of `wayland-tracer -h` or `man wayland-tracer`.
