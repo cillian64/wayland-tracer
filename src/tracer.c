@@ -20,10 +20,13 @@
  * OF THIS SOFTWARE.
  */
 
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -37,6 +40,7 @@
 #include <time.h>
 #include <errno.h>
 #include <assert.h>
+#include <dirent.h>
 
 #include "wayland-os.h"
 #include "wayland-private.h"
@@ -593,6 +597,7 @@ usage(void)
 		"  -d FILE\t\tAdd an xml protocol file\n"
 		"\t\t\twayland-tracer will output readable format according\n"
 		"\t\t\tto the protocols given if -d is specified\n"
+		"  -D\t\t\tAutomatically try to load all protocol files\n"
 		"  -h\t\t\tThis help message\n\n");
 }
 
@@ -607,8 +612,74 @@ tracer_add_protocol(struct tracer_options *options, const char *file)
 		return -1;
 	}
 
-	protocol_file->loc = file;
+	protocol_file->loc = strdup(file);
 	wl_list_insert(&options->protocol_file_list, &protocol_file->link);
+
+	return 0;
+}
+
+bool endswith(const char *str, const char *suffix)
+{
+	size_t str_len = strlen(str);
+	size_t suffix_len = strlen(suffix);
+
+	if (str_len < suffix_len)
+		return false;
+
+	return strcmp(str + str_len - suffix_len, suffix) == 0;
+}
+
+static int protocol_walk(struct tracer_options *options, const char *path) {
+
+	struct dirent *entry;
+	struct stat statbuf;
+
+	DIR *dir = opendir(path);
+	if (dir == NULL) {
+		fprintf(stderr, "Cannot open directory %s: %s\n", dir, strerror(errno));
+		return -1;
+	}
+
+	while ((entry = readdir(dir)) != NULL) {
+		char subpath[PATH_MAX];
+		snprintf(subpath, sizeof(subpath), "%s/%s", path, entry->d_name);
+
+		if (entry->d_type == DT_DIR) {
+			if (strcmp(".", entry->d_name) == 0 ||
+					strcmp("..", entry->d_name) == 0) {
+				continue;
+			}
+			protocol_walk(options, subpath);
+		} else if (entry->d_type == DT_REG && endswith(entry->d_name, ".xml")) {
+			// TODO: This won't work with symlinks
+			fprintf(stderr, "Loading protocol file %s\n", subpath);
+			if (tracer_add_protocol(options, subpath) != 0) {
+				fprintf(stderr, "Failed to add protocol file: %s\n", subpath);
+				closedir(dir);
+				return -1;
+			}
+		}
+	}
+
+	closedir(dir);
+	return 0;
+}
+
+static int
+tracer_add_all_protocols(struct tracer_options *options)
+{
+	// First load the core wayland protocol
+	const char* filepath = "/usr/share/wayland/wayland.xml";
+	fprintf(stderr, "Loading protocol file %s\n", filepath);
+	if (tracer_add_protocol(options, filepath) != 0) {
+		fprintf(stderr, "Failed to add core wayland.xml protocol file: %s\n", strerror(errno));
+		return -1;
+	}
+
+	// Now load all the protocols in /usr/share/wayland-protocols
+	if (protocol_walk(options, "/usr/share/wayland-protocols") != 0) {
+		return -1;
+	}
 
 	return 0;
 }
@@ -670,6 +741,11 @@ tracer_parse_args(int argc, char *argv[])
 			}
 			if (tracer_add_protocol(options, argv[i]) != 0)
 				exit(EXIT_FAILURE);
+			options->output_format = TRACER_OUTPUT_INTERPRET;
+		} else if (!strcmp(argv[i], "-D")) {
+			if (tracer_add_all_protocols(options) != 0) {
+				exit(EXIT_FAILURE);
+			}
 			options->output_format = TRACER_OUTPUT_INTERPRET;
 		} else {
 			fprintf(stderr, "Unknown argument '%s'\n", argv[i]);
