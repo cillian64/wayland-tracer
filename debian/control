@@ -1,0 +1,19 @@
+Source: wayland-tracer
+Maintainer: David Turner <david.turner@raspberrypi.com>
+Section: devel
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends:
+ debhelper-compat (= 13),
+ pkg-config,
+ libexpat1-dev
+
+Package: wayland-tracer
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, wayland-protocols, libwayland-dev
+Description: Protocol dumper for Wayland
+ wayland-tracer is a protocol dumper for Wayland. It can be used to
+ trace what's on the wire between the compositor and client, which can
+ be useful for debugging and is superior to WAYLAND_DEBUG in some
+ aspects. It can dump raw binary data or interpret data to readable
+ format if XML protocol definitions are provided.

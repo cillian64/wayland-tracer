@@ -1,0 +1,5 @@
+wayland-tracer (0.2-1) UNRELEASED; urgency=medium
+
+  * Initial release.
+
+ -- David Turner <david.turner@raspberrypi.com>  Thu, 19 Dec 2024 14:46:25 +0000

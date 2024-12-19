@@ -33,3 +33,8 @@ Makefile
 Makefile.in
 wayland-tracer
 wayland-tracer.1
+debian/files
+debian/autoreconf.after
+debian/autoreconf.before
+debian/debhelper-build-stamp
+debian/wayland-tracer.substvars
