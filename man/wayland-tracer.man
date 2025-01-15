@@ -1,4 +1,4 @@
-.TH WAYLAND-TRACER 1 "2014-08-05" "wayland-tracer __version__"
+.TH "WAYLAND-TRACER" "1" "2014-08-05" "wayland-tracer @VERSION_UNQ@" "WAYLAND_TRACER"
 .SH NAME
 wayland-tracer \- a wire protocol dumper for Wayland
 
