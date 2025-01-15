@@ -27,6 +27,7 @@
 static int
 bin_init(struct tracer *tracer)
 {
+	(void)tracer;
 	return 0;
 }
 
@@ -38,7 +39,8 @@ bin_handle_data(struct tracer_connection *connection, int rlen)
 	struct wl_connection *wl_conn= connection->wl_conn;
 	struct tracer_connection *peer = connection->peer;
 	struct tracer_instance *instance = connection->instance;
-	struct tracer *tracer = instance->tracer;
+
+	(void)rlen;
 
 	len = wl_buffer_size(&wl_conn->in);
 	if (len == 0)

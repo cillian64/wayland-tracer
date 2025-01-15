@@ -112,26 +112,28 @@ start_element(void *data, const char *element_name, const char **atts)
 	struct tracer_interface *interface;
 	struct tracer_message *message;
 	struct tracer_arg *arg;
-	struct entry *entry;
 	const char *name, *type, *interface_name, *value;
-	char *end;
-	int i, version;
+	int i;
 
 	ctx->loc.line_number = XML_GetCurrentLineNumber(ctx->parser);
 	name = NULL;
 	type = NULL;
-	version = 0;
 	interface_name = NULL;
 	value = NULL;
 	for (i = 0; atts[i]; i += 2) {
-		if (strcmp(atts[i], "name") == 0)
+		if (strcmp(atts[i], "name") == 0) {
 			name = atts[i + 1];
-		if (strcmp(atts[i], "type") == 0)
+		}
+		if (strcmp(atts[i], "type") == 0) {
 			type = atts[i + 1];
-		if (strcmp(atts[i], "value") == 0)
+		}
+		if (strcmp(atts[i], "value") == 0) {
 			value = atts[i + 1];
-		if (strcmp(atts[i], "interface") == 0)
+			(void)value;
+		}
+		if (strcmp(atts[i], "interface") == 0) {
 			interface_name = atts[i + 1];
+		}
 	}
 
 	ctx->character_data_length = 0;
@@ -220,8 +222,7 @@ start_element(void *data, const char *element_name, const char **atts)
 							   xstrdup(interface_name) :
 							   NULL;
 
-			/* Fall through to OBJECT case. */
-
+			/* fallthrough */
 		case OBJECT:
 			if (interface_name)
 				arg->interface_name = xstrdup(interface_name);

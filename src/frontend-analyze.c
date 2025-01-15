@@ -184,7 +184,7 @@ analyze_handle_data(struct tracer_connection *connection, int len)
 	int opcode, size;
 	struct tracer_instance *instance = connection->instance;
 	struct tracer_interface *interface;
-	struct tracer_message *message;
+	struct tracer_message *message = NULL;
 
 	wl_connection_copy(connection->wl_conn, p, sizeof p);
 	id = p[0];

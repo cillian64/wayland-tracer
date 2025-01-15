@@ -618,7 +618,7 @@ tracer_add_protocol(struct tracer_options *options, const char *file)
 	return 0;
 }
 
-bool endswith(const char *str, const char *suffix)
+static bool endswith(const char *str, const char *suffix)
 {
 	size_t str_len = strlen(str);
 	size_t suffix_len = strlen(suffix);
@@ -632,11 +632,10 @@ bool endswith(const char *str, const char *suffix)
 static int protocol_walk(struct tracer_options *options, const char *path) {
 
 	struct dirent *entry;
-	struct stat statbuf;
 
 	DIR *dir = opendir(path);
 	if (dir == NULL) {
-		fprintf(stderr, "Cannot open directory %s: %s\n", dir, strerror(errno));
+		fprintf(stderr, "Cannot open directory %s: %s\n", path, strerror(errno));
 		return -1;
 	}
 
@@ -769,7 +768,6 @@ tracer_create(struct tracer_options *options)
 	pid_t pid;
 	struct tracer *tracer;
 	char sockfdstr[12];
-	struct protocol_file *file;
 
 	tracer = malloc(sizeof *tracer);
 	if (tracer == NULL) {
