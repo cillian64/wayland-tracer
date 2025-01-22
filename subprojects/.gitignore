@@ -1,0 +1,5 @@
+percetto/
+
+# Sub-sub-project pulled in by percetto
+perfetto.wrap
+perfetto/

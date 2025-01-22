@@ -2,12 +2,20 @@ project('wayland-tracer', 'c', version : '0.2.0')
 
 expat = dependency('expat')
 cc = meson.get_compiler('c')
-rt = cc.find_library('rt', required : true)
+rt = cc.find_library('rt', required: true)
+deps = [expat, rt]
+
+if get_option('perfetto').enabled()
+  percetto_proj = subproject('percetto')
+  percetto_dep = percetto_proj.get_variable('percetto_dep')
+  deps += [percetto_dep]
+endif
 
 tracer_version = meson.project_version()
 conf = configuration_data()
 conf.set_quoted('VERSION', tracer_version)
 conf.set('VERSION_UNQ', tracer_version)
+conf.set10('HAVE_PERFETTO', get_option('perfetto').enabled())
 configure_file(output : 'config.h',
                configuration : conf)
 
@@ -39,8 +47,9 @@ sources = [
 ]
 
 wayland_tracer = executable(
-  'wayland-tracer', sources,
-  dependencies : [expat, rt],
+  'wayland-tracer',
+  sources,
+  dependencies: deps,
   c_args: cflags,
-  install : true,
+  install: true,
 )

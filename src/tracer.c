@@ -599,6 +599,8 @@ usage(void)
 		"\t\t\tto the protocols given if -d is specified\n"
 		"  -D\t\t\tAutomatically try to load all protocol files\n"
 		"  -h\t\t\tThis help message\n\n");
+	fprintf(stderr, "Compiled %s perfetto tracing support\n",
+		HAVE_PERFETTO ? "with" : "without");
 }
 
 static int
