@@ -695,6 +695,8 @@ tracer_parse_args(int argc, char *argv[])
 		return NULL;
 	}
 
+	memset(options, 0, sizeof(*options));
+
 	options->spawn_args = NULL;
 	options->mode = TRACER_MODE_SINGLE;
 	wl_list_init(&options->protocol_file_list);
