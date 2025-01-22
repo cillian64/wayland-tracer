@@ -11,6 +11,8 @@ conf.set('VERSION_UNQ', tracer_version)
 configure_file(output : 'config.h',
                configuration : conf)
 
+subdir('man')
+
 cflags = [
   '-Wall',
   '-Wextra',
@@ -41,14 +43,4 @@ wayland_tracer = executable(
   dependencies : [expat, rt],
   c_args: cflags,
   install : true,
-)
-
-mandir = join_paths(get_option('prefix'), get_option('mandir'), 'man1')
-
-configure_file(
-  input : 'man/wayland-tracer.man',
-  output : 'wayland-tracer.1',
-  configuration : conf,
-  install: true,
-  install_dir: mandir,
 )
