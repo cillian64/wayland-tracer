@@ -1,5 +1,10 @@
 wayland-tracer (0.2-1) UNRELEASED; urgency=medium
 
-  * Initial release.
+  * Initial release
+  * Forked from https://github.com/dboyan/wayland-tracer
+  * Fix some bugs
+  * Add -D option to auto-load all protocols
+  * Replace autotools with meson, rewrite man page in scdoc
+  * Add optional perfetto tracing of wayland protocol messages
 
  -- David Turner <david.turner@raspberrypi.com>  Thu, 19 Dec 2024 14:46:25 +0000
