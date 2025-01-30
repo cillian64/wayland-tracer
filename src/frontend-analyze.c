@@ -29,6 +29,12 @@
 #include "frontend-analyze.h"
 #include "tracer-analyzer.h"
 
+#include "config.h"
+
+#if HAVE_PERFETTO
+#include "wt_perfetto.h"
+#endif // HAVE_PERFETTO
+
 #define DIV_ROUNDUP(n, a) ( ((n) + ((a) - 1)) / (a) )
 
 static int
@@ -89,6 +95,16 @@ analyze_protocol(struct tracer_connection *connection,
 		goto finish;
 
 	count = strlen(message->signature);
+
+#if HAVE_PERFETTO
+	char perfbuf[1024] = {0};
+	snprintf(perfbuf, sizeof(perfbuf), "%s %s@%u.%s",
+		   connection->side == TRACER_CLIENT_SIDE ? "<=" : "=>",
+		   target->name,
+		   id,
+		   message->name);
+	TRACE_INSTANT_ON_TRACK(wayproto, waytrack, perfbuf);
+#endif // HAVE_PERFETTO
 
 	tracer_log("%s %s@%u.%s(",
 		   connection->side == TRACER_CLIENT_SIDE ? "<=" : "=>",

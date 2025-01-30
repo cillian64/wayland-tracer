@@ -50,6 +50,16 @@
 #include "frontend-analyze.h"
 #include "frontend-bin.h"
 
+#include "config.h"
+
+#if HAVE_PERFETTO
+#include "wt_perfetto.h"
+
+PERCETTO_CATEGORY_DEFINE(PERCETTO_CATEGORIES);
+#endif // HAVE_PERFETTO
+
+
+
 #ifndef UNIX_PATH_MAX
 #define UNIX_PATH_MAX 108
 #endif
@@ -883,12 +893,33 @@ err_instance:
 	return NULL;
 }
 
+#if HAVE_PERFETTO
+PERCETTO_TRACK_DEFINE(waytrack, PERCETTO_TRACK_EVENTS);
+
+static int
+perfetto_tracer_init(void) {
+	if (PERCETTO_INIT(PERCETTO_CLOCK_DONT_CARE) != 0) {
+		fprintf(stderr, "Error initialising perfetto\n");
+		return -1;
+	}
+	if (PERCETTO_REGISTER_TRACK(waytrack) != 0) {
+		fprintf(stderr, "Error creating perfetto track\n");
+		return -1;
+	}
+	return 0;
+}
+#endif // HAVE_PERFETTO
+
 int
 main(int argc, char *argv[])
 {
 	int ret;
 	struct tracer *tracer;
 	struct tracer_options *options;
+
+#if HAVE_PERFETTO
+	perfetto_tracer_init();
+#endif // HAVE_PERFETTO
 
 	options = tracer_parse_args(argc, argv);
 	if (options == NULL) {
