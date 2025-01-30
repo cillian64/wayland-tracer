@@ -6,7 +6,9 @@ Standards-Version: 4.6.2
 Build-Depends:
  debhelper-compat (= 13),
  pkg-config,
- libexpat1-dev
+ libexpat1-dev,
+ meson (>= 0.59),
+ scdoc
 
 Package: wayland-tracer
 Architecture: any
