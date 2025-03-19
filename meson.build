@@ -1,4 +1,4 @@
-project('wayland-tracer', 'c', version : '0.2.0')
+project('wayland-tracer', 'c', version : '0.3.0')
 
 expat = dependency('expat')
 cc = meson.get_compiler('c')
