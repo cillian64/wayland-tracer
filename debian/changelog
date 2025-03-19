@@ -1,4 +1,11 @@
-wayland-tracer (0.2-1) UNRELEASED; urgency=medium
+wayland-tracer (0.3-1) bookworm; urgency=medium
+
+  * Static link against libpercetto/libperfetto
+  * Modify debian install script to exclude subprojects
+
+ -- David Turner <david.turner@raspberrypi.com>  Wed, 19 Mar 2025 11:35:27 +0000
+
+wayland-tracer (0.2-1) bookworm; urgency=medium
 
   * Initial release
   * Forked from https://github.com/dboyan/wayland-tracer
