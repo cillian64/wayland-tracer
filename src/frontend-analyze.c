@@ -20,6 +20,7 @@
  * OF THIS SOFTWARE.
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -37,14 +38,21 @@
 
 #define DIV_ROUNDUP(n, a) ( ((n) + ((a) - 1)) / (a) )
 
+#define TRACE_COLOR_RESET "\e[0m"
+#define TRACE_COLOR_RED "\e[31m"
+#define TRACE_COLOR_GREEN "\e[32m"
+#define TRACE_COLOR_YELLOW "\e[33m"
+#define TRACE_COLOR_BLUE "\e[34m"
+#define TRACE_COLOR_MAGENTA "\e[35m"
+#define TRACE_COLOR_CYAN "\e[36m"
+
 static int
 analyze_init(struct tracer *tracer)
 {
-	struct tracer_analyzer *analyzer;
 	struct protocol_file *file;
 	struct tracer_options *options = tracer->options;
 
-	analyzer = tracer_analyzer_create();
+	struct tracer_analyzer *analyzer = tracer_analyzer_create();
 	if (analyzer == NULL) {
 		fprintf(stderr, "Failed to create analyzer: %m\n");
 		return -1;
@@ -59,8 +67,9 @@ analyze_init(struct tracer *tracer)
 		}
 	}
 
-	if (tracer_analyzer_finalize(analyzer) != 0)
+	if (tracer_analyzer_finalize(analyzer) != 0) {
 		return -1;
+	}
 
 	tracer->frontend_data = analyzer;
 
@@ -84,11 +93,11 @@ analyze_protocol(struct tracer_connection *connection,
 	struct tracer_connection *peer = connection->peer;
 	struct tracer_instance *instance = connection->instance;
 	struct tracer *tracer = connection->instance->tracer;
-	struct tracer_analyzer *analyzer;
+	struct tracer_analyzer *analyzer = (struct tracer_analyzer *) tracer->frontend_data;
 	struct tracer_interface *type;
 	struct tracer_interface **ptype;
 
-	analyzer = (struct tracer_analyzer *) tracer->frontend_data;
+	bool color = tracer->options->colorised_output;
 
 	wl_connection_copy(connection->wl_conn, buf, size);
 	if (target == NULL)
@@ -106,26 +115,62 @@ analyze_protocol(struct tracer_connection *connection,
 	TRACE_INSTANT_ON_TRACK(wayproto, waytrack, perfbuf);
 #endif // HAVE_PERFETTO
 
-	tracer_log("%s %s@%u.%s(",
+	// General color scheme:
+	// - Red for ID creation/deletion
+	// - Magenta for ID references
+	// - Blue for types
+	// - Green for method names
+	// - Cyan for FD arguments
+	// - Yellow for other arguments
+	const char *color_method = strcmp(message->name, "delete_id") == 0 ?
+			TRACE_COLOR_RED : TRACE_COLOR_GREEN;
+	color_method = color ? color_method : "";
+	const char *color_id_change = color ? TRACE_COLOR_RED : "";
+	const char *color_type = color ? TRACE_COLOR_BLUE : "";
+	const char *color_id = color ? TRACE_COLOR_MAGENTA : "";
+	const char *color_reset = color ? TRACE_COLOR_RESET : "";
+	const char *color_arg = color ? TRACE_COLOR_YELLOW : "";
+	const char *color_fd = color ? TRACE_COLOR_CYAN : "";
+
+
+	tracer_log("%s %s%s%s@%u.%s%s%s(",
 		   connection->side == TRACER_CLIENT_SIDE ? "<=" : "=>",
+		   color_type,
 		   target->name,
+		   color_id,
 		   id,
-		   message->name);
+		   color_method,
+		   message->name,
+		   color_reset);
 
 	signature = message->signature;
 	for (i = 0; i < count; i++) {
-		if (i != 0)
+		if (i != 0) {
 			tracer_log_cont(", ");
+		}
+
+		bool is_delete_id = strcmp(message->name, "delete_id") == 0;
 
 		switch (*signature) {
 		case 'u':
-			tracer_log_cont("%u", *p++);
+			// If the method is delete_id then we know the single
+			// u32 argument is the ID being deleted, so make it red.
+			tracer_log_cont("%s%u%s",
+				is_delete_id ? color_id_change : color_arg,
+				*p++,
+				color_reset);
 			break;
 		case 'i':
-			tracer_log_cont("%i", *p++);
+			tracer_log_cont("%s%i%s",
+				color_arg,
+				*p++,
+				color_reset);
 			break;
 		case 'f':
-			tracer_log_cont("%lf", wl_fixed_to_double(*p++));
+			tracer_log_cont("%s%lf%s",
+				color_arg,
+				wl_fixed_to_double(*p++),
+				color_reset);
 			break;
 		case 's':
 			length = *p++;
@@ -133,22 +178,34 @@ analyze_protocol(struct tracer_connection *connection,
 			if (length == 0)
 				tracer_log_cont("(null)");
 			else
-				tracer_log_cont("\"%s\"", (char *) p);
+				tracer_log_cont("%s\"%s\"%s",
+					color_arg,
+					(char *) p,
+					color_reset);
 			p = p + DIV_ROUNDUP(length, sizeof *p);
 			break;
 		case 'o':
-			tracer_log_cont("obj %u", *p++);
+			tracer_log_cont("%sobj %u%s",
+				color_id,
+				*p++,
+				color_reset);
 			break;
 		case 'n':
 			new_id = *p++;
 			if (new_id != 0) {
 				tracer_instance_add_obj_interface(instance, new_id, message->types[0]);
 			}
-			tracer_log_cont("new_id %u", new_id);
+			tracer_log_cont("%snew_id %u%s",
+				color_id_change,
+				new_id,
+				color_reset);
 			break;
 		case 'a':
 			length = *p++;
-			tracer_log_cont("array: %u", length);
+			tracer_log_cont("%sarray: %u%s",
+				color_arg,
+				length,
+				color_reset);
 			p = p + DIV_ROUNDUP(length, sizeof *p);
 			break;
 		case 'h':
@@ -156,7 +213,10 @@ analyze_protocol(struct tracer_connection *connection,
 				       &fd,
 				       sizeof fd);
 			connection->wl_conn->fds_in.tail += sizeof fd;
-			tracer_log_cont("fd %d", fd);
+			tracer_log_cont("%sfd %d%s",
+				color_fd,
+				fd,
+				color_reset);
 			wl_connection_put_fd(peer->wl_conn, fd);
 			break;
 		case 'N': /* N = sun */
@@ -176,8 +236,11 @@ analyze_protocol(struct tracer_connection *connection,
 				type = ptype == NULL ? NULL : *ptype;
 				tracer_instance_add_obj_interface(instance, new_id, type);
 			}
-			tracer_log_cont("new_id %u[%s,%u]",
-					new_id, type_name, name);
+			tracer_log_cont("%snew_id %u%s[%s,%u]",
+				color_id_change,
+				new_id,
+				color_reset,
+				type_name, name);
 			break;
 		}
 

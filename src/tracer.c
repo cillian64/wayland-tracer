@@ -608,9 +608,12 @@ usage(void)
 		"\t\t\twayland-tracer will output readable format according\n"
 		"\t\t\tto the protocols given if -d is specified\n"
 		"  -D\t\t\tAutomatically try to load all protocol files\n"
+		"  -C COLOR_MODE\t\tChange color mode. Options: auto, never, always\n"
 		"  -h\t\t\tThis help message\n\n");
-	fprintf(stderr, "Compiled %s perfetto tracing support\n",
+	fprintf(stderr, "Compiled %s perfetto tracing support\n\n",
 		HAVE_PERFETTO ? "with" : "without");
+	fprintf(stderr, "Color mode can be specified with -C argument or "
+		"WT_COLOR environent variable.  Default is auto.\n");
 }
 
 static int
@@ -701,6 +704,9 @@ tracer_parse_args(int argc, char *argv[])
 	int i;
 	struct tracer_options *options;
 
+	// "always", "never", or "auto".  Empty string means unspecified.
+	const char* color_mode = "";
+
 	options = malloc(sizeof *options);
 	if (options == NULL) {
 		errno = ENOMEM;
@@ -760,6 +766,14 @@ tracer_parse_args(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			options->output_format = TRACER_OUTPUT_INTERPRET;
+		} else if (!strcmp(argv[i], "-C")) {
+			i++;
+			if (i == argc) {
+				fprintf(stderr, "No color mode specified with -C\n");
+				usage();
+				exit(EXIT_FAILURE);
+			}
+			color_mode = argv[i];
 		} else {
 			fprintf(stderr, "Unknown argument '%s'\n", argv[i]);
 			usage();
@@ -772,6 +786,28 @@ tracer_parse_args(int argc, char *argv[])
 		fprintf(stderr, "No client specified in single mode\n");
 		exit(EXIT_FAILURE);
 	}
+
+	// If no -C argument then try WT_COLOR env var. If that is absent then
+	// default to "auto".
+	if (strcmp(color_mode, "") == 0) {
+		color_mode = getenv("WT_COLOR");
+		if (color_mode == NULL) {
+			color_mode = "auto";
+		}
+	}
+
+	if (strcmp(color_mode, "never") == 0) {
+		options->colorised_output = false;
+	} else if (strcmp(color_mode, "always") == 0) {
+		options->colorised_output = true;
+	} else if (strcmp(color_mode, "auto") == 0) {
+		options->colorised_output = isatty(fileno(stdout));
+	} else {
+		fprintf(stderr, "Invalid color mode specified\n");
+		usage();
+		exit(EXIT_FAILURE);
+	}
+
 	return options;
 }
 

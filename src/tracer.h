@@ -23,6 +23,7 @@
 #ifndef TRACER_H
 #define TRACER_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include "wayland-util.h"
 
@@ -87,6 +88,9 @@ struct tracer_options {
 	char *socket;
 	const char *outfile;
 	struct wl_list protocol_file_list;
+
+	// Should output logs be coloured
+	bool colorised_output;
 };
 
 struct tracer {
