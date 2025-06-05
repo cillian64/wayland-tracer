@@ -63,7 +63,7 @@ bin_handle_data(struct tracer_connection *connection, int rlen)
 	fdlen /= sizeof(int32_t);
 
 	if (fdlen != 0)
-		tracer_log_cont("%d Fds in control data:", fdlen);
+		tracer_log_cont("%d FDs in control data:", fdlen);
 
 	for (i = 0; i < fdlen; i++) {
 		fd = ((int *) buf)[i];

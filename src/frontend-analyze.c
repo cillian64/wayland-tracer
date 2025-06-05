@@ -219,7 +219,7 @@ analyze_handle_data(struct tracer_connection *connection, int len)
 	} else {
 		tracer_log("Unknown object %u opcode %u, size %u",
 			   id, opcode, size);
-		tracer_log_cont("\nWarning: we can't guarentee the following result");
+		tracer_log_cont("\nWarning: we can't guarantee the following result");
 		tracer_log_end();
 	}
 

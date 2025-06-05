@@ -216,7 +216,7 @@ start_element(void *data, const char *element_name, const char **atts)
 		case NEW_ID:
 			ctx->message->new_id_count++;
 			if (ctx->message->new_id_count > 1)
-				fail(&ctx->loc, "there can't be more than one new_id's in one message");
+				fail(&ctx->loc, "there can't be more than one new_id in a message");
 
 			ctx->message->new_interface_name = interface_name ?
 							   xstrdup(interface_name) :

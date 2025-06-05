@@ -485,13 +485,13 @@ get_socket_lock(struct tracer_socket *socket)
 	               (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP));
 
 	if (fd_lock < 0) {
-		fprintf(stderr, "unable to open lockfile %s check permissions\n",
+		fprintf(stderr, "Unable to open lockfile %s, check permissions?\n",
 			socket->lock_addr);
 		return -1;
 	}
 
 	if (flock(fd_lock, LOCK_EX | LOCK_NB) < 0) {
-		fprintf(stderr, "unable to lock lockfile %s, maybe another compositor is running\n",
+		fprintf(stderr, "Unable to lock lockfile %s, maybe another compositor is running\n",
 			socket->lock_addr);
 		close(fd_lock);
 		return -1;
@@ -499,7 +499,7 @@ get_socket_lock(struct tracer_socket *socket)
 
 	if (stat(socket->addr.sun_path, &socket_stat) < 0 ) {
 		if (errno != ENOENT) {
-			fprintf(stderr, "did not manage to stat file %s\n",
+			fprintf(stderr, "Error running stat() on file %s: %m\n",
 				socket->addr.sun_path);
 			close(fd_lock);
 			return -1;
