@@ -801,7 +801,11 @@ tracer_parse_args(int argc, char *argv[])
 	} else if (strcmp(color_mode, "always") == 0) {
 		options->colorised_output = true;
 	} else if (strcmp(color_mode, "auto") == 0) {
-		options->colorised_output = isatty(fileno(stdout));
+		// Auto mode: Enable colors unless our output is being piped or
+		// the -o option is used to send output to a file.
+		bool output_piped = !isatty(fileno(stdout));
+		bool output_file = options->outfile != NULL;
+		options->colorised_output = !output_piped && !output_file;
 	} else {
 		fprintf(stderr, "Invalid color mode specified\n");
 		usage();
